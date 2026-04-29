@@ -359,8 +359,8 @@ local Compkiller = {
 	Version = '2.6',
     -- Auto-download logo if missing
     Logo = (function()
-        local fileName = "voidsens.png"
-        local url = "https://raw.githubusercontent.com/HIITMEEMARIO/here/main/Projekt_bez_nazwy-removebg-preview.png"
+        local fileName = "logo.png"
+        local url = "https://raw.githubusercontent.com/midinterlude/konami/refs/heads/main/logo.png"
         
         if isfile and writefile and not isfile(fileName) then
             pcall(function()

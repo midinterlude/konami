@@ -9248,16 +9248,25 @@ function Compkiller.new(Config : Window)
 			end);
 		end;
 
+		local lastScrollingUpdates = {}
 		function TabArgs:_UpdateScrolling(Frame: ScrollingFrame , ListLayout: UIListLayout)
-			local frame;
+			local CurrentScale = (WindowArgs.MainUIScale and WindowArgs.MainUIScale.Scale) or 1;
+			local ContentSizeY = ListLayout.AbsoluteContentSize.Y;
+			local FrameSizeY = Frame.AbsoluteSize.Y;
+			
+			local cache = lastScrollingUpdates[Frame]
+			if cache and cache.Content == ContentSizeY and cache.Frame == FrameSizeY and cache.Scale == CurrentScale then
+				return
+			end
+			lastScrollingUpdates[Frame] = {Content = ContentSizeY, Frame = FrameSizeY, Scale = CurrentScale}
 
+			local frame;
 			local last = 0;
 			local scale = 0;
 
 			local Offset = ListLayout.Padding.Offset;
 			local Childrens = Frame:GetChildren();
 
-			local CurrentScale = WindowArgs.MainUIScale.Scale;
 			for i,v in next ,Childrens do
 				if v:IsA('Frame') then
 					if v.LayoutOrder > last then
@@ -9273,12 +9282,11 @@ function Compkiller.new(Config : Window)
 				local originalScale = frame:GetAttribute('OriginalScale');
 
 				if originalScale then
-					local CurrentScale = WindowArgs.MainUIScale.Scale;
-					local Maximum = Frame.AbsoluteSize.Y / CurrentScale;
+					local Maximum = FrameSizeY / CurrentScale;
 
 					local remainingHeight = Maximum - ((scale) - (frame.AbsoluteSize.Y / CurrentScale));
 
-					if originalScale >= (Frame.AbsoluteSize.Y / CurrentScale) then
+					if originalScale >= (FrameSizeY / CurrentScale) then
 						Frame:SetAttribute('LayoutStacks',originalScale + 5);
 					else
 						Frame:SetAttribute('LayoutStacks',((remainingHeight) + 5));
@@ -9300,21 +9308,16 @@ function Compkiller.new(Config : Window)
 			[Upvalue.Right] = {},
 		};
 
-		TabArgs.LeftThread = coroutine.wrap(function()
-			task.wait();
+		-- Use signals instead of RenderStepped for scrolling updates
+		Upvalue.LeftLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+			task.defer(function() TabArgs:_UpdateScrolling(Upvalue.Left, Upvalue.LeftLayout) end)
+		end)
+		TabArgs.LeftThread = coroutine.wrap(function() end);
 
-			while true do RunService.RenderStepped:Wait()
-				TabArgs:_UpdateScrolling(Upvalue.Left , Upvalue.LeftLayout);
-			end;
-		end);
-
-		TabArgs.RightThread = coroutine.wrap(function()
-			task.wait(0.1);
-
-			while true do RunService.RenderStepped:Wait()
-				TabArgs:_UpdateScrolling(Upvalue.Right , Upvalue.RightLayout);
-			end;
-		end);
+		Upvalue.RightLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+			task.defer(function() TabArgs:_UpdateScrolling(Upvalue.Right, Upvalue.RightLayout) end)
+		end)
+		TabArgs.RightThread = coroutine.wrap(function() end);
 
 		--TabArgs.LeftThread();
 		--TabArgs.RightThread();
@@ -10032,16 +10035,33 @@ function Compkiller.new(Config : Window)
 			Property = "BackgroundColor3"
 		});
 
+		local lastVili = nil;
+		local lastScale = nil;
+		local lastSizeX = nil;
+		local lastTab = nil;
+
 		local function UpdateSelectionUI()
 			local CurrentScale = (WindowArgs.MainUIScale and WindowArgs.MainUIScale.Scale) or 1;
-			BlurElement.Size = UDim2.new(1, (TabFrame.AbsoluteSize.X / CurrentScale) - 35, 1, 0);
-			MovementFrame.Size = UDim2.new(1, (TabFrame.AbsoluteSize.X / CurrentScale) - 35, 1, 0);
+			local TabSizeX = TabFrame.AbsoluteSize.X;
+			
+			if CurrentScale ~= lastScale or TabSizeX ~= lastSizeX then
+				BlurElement.Size = UDim2.new(1, (TabSizeX / CurrentScale) - 35, 1, 0);
+				MovementFrame.Size = UDim2.new(1, (TabSizeX / CurrentScale) - 35, 1, 0);
+				lastScale = CurrentScale;
+				lastSizeX = TabSizeX;
+			end
 
 			SelectionFrame.BackgroundColor3 = Compkiller.Colors.Highlight;
 
 			if WindowArgs.SelectedTab and WindowArgs.IsOpen then
 				local vili = -((TabButtons.AbsolutePosition.Y / CurrentScale) - (WindowArgs.SelectedTab.AbsolutePosition.Y / CurrentScale)) + 4;
 				local distance = (SelectionFrame.Position.Y.Offset - vili);
+
+				if vili == lastVili and WindowArgs.SelectedTab == lastTab then
+					return
+				end
+				lastVili = vili;
+				lastTab = WindowArgs.SelectedTab;
 
 				if vili < 0 or vili > (TabButtons.AbsoluteSize.Y / CurrentScale) then
 					Compkiller:_Animation(SelectionFrame , TweenInfo.new(0.1) , {
@@ -10077,12 +10097,8 @@ function Compkiller.new(Config : Window)
 			task.defer(UpdateSelectionUI)
 		end)
 
-		-- Slow fallback loop for tab selection changes (no signal available)
-		task.spawn(function()
-			while true do RunService.RenderStepped:Wait()
-				UpdateSelectionUI()
-			end
-		end)
+		-- Removed high-frequency RenderStepped loop for performance
+		-- UpdateSelectionUI is already handled by AbsoluteSize signal and manual calls
 	end);
 
 	WindowArgs:Update();

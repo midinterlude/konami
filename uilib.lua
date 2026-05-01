@@ -6390,6 +6390,7 @@ function Compkiller.new(Config : Window)
 	end;
 
 	local CompKiller = Instance.new("ScreenGui")
+	local MainUIScale = Instance.new("UIScale")
 	local MainFrame = Instance.new("Frame")
 	local UICorner = Instance.new("UICorner")
 	local TabFrame = Instance.new("Frame")
@@ -6412,7 +6413,7 @@ function Compkiller.new(Config : Window)
 	Compkiller:_DrawKeybinds(CompKiller);
 
 	UIListLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
-		local CurrentScale = MainUIScale.Scale;
+		local CurrentScale = (MainUIScale and MainUIScale.Scale) or 1;
 		TabButtonScrollingFrame.CanvasSize = UDim2.fromOffset(0,UIListLayout.AbsoluteContentSize.Y / CurrentScale)
 	end);
 
@@ -6459,7 +6460,6 @@ function Compkiller.new(Config : Window)
 
 	UICorner.Parent = MainFrame
 
-	local MainUIScale = Instance.new("UIScale")
 	MainUIScale.Parent = MainFrame
 	Compkiller.MainUIScale = MainUIScale
 	WindowArgs.MainUIScale = MainUIScale
@@ -9801,7 +9801,7 @@ function Compkiller.new(Config : Window)
 			Compkiller:_Blur(BackFrame,Signal);
 
 			UIListLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
-				local CurrentScale = WindowArgs.MainUIScale.Scale;
+				local CurrentScale = (WindowArgs.MainUIScale and WindowArgs.MainUIScale.Scale) or 1;
 				Compkiller:_Animation(Watermark,TweenInfo.new(0.4),{
 					Size = UDim2.new(0, (UIListLayout.AbsoluteContentSize.X / CurrentScale) + 8, 0, 23)
 				});
@@ -10029,7 +10029,7 @@ function Compkiller.new(Config : Window)
 		});
 
 		local function UpdateSelectionUI()
-			local CurrentScale = WindowArgs.MainUIScale.Scale;
+			local CurrentScale = (WindowArgs.MainUIScale and WindowArgs.MainUIScale.Scale) or 1;
 			BlurElement.Size = UDim2.new(1, (TabFrame.AbsoluteSize.X / CurrentScale) - 35, 1, 0);
 			MovementFrame.Size = UDim2.new(1, (TabFrame.AbsoluteSize.X / CurrentScale) - 35, 1, 0);
 

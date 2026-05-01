@@ -7588,7 +7588,7 @@ function Compkiller.new(Config : Window)
 		local Detection = function()
 			local Target = (UilistLayout.AbsoluteContentSize.Y);
 
-			for i,v in next , Parent:GetChildren() do task.wait(0.1)
+			for i,v in next , Parent:GetChildren() do
 				local UIList = v:FindFirstChildWhichIsA('UIListLayout');
 				if v:IsA('Frame') and UIList then
 					if (UIList.AbsoluteContentSize.Y >= Target) or (v.AbsoluteSize.Y >= Target) or (UilistLayout.AbsoluteContentSize.Y > Parent.AbsoluteSize.Y) then

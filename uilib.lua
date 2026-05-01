@@ -6413,8 +6413,10 @@ function Compkiller.new(Config : Window)
 	Compkiller:_DrawKeybinds(CompKiller);
 
 	UIListLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
-		local CurrentScale = (MainUIScale and MainUIScale.Scale) or 1;
-		TabButtonScrollingFrame.CanvasSize = UDim2.fromOffset(0,UIListLayout.AbsoluteContentSize.Y / CurrentScale)
+		task.defer(function()
+			local CurrentScale = (MainUIScale and MainUIScale.Scale) or 1;
+			TabButtonScrollingFrame.CanvasSize = UDim2.fromOffset(0,UIListLayout.AbsoluteContentSize.Y / CurrentScale)
+		end)
 	end);
 
 	CompKiller.Name = "u?name=compkiller_?"..Compkiller:_RandomString();
@@ -9801,10 +9803,12 @@ function Compkiller.new(Config : Window)
 			Compkiller:_Blur(BackFrame,Signal);
 
 			UIListLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
-				local CurrentScale = (WindowArgs.MainUIScale and WindowArgs.MainUIScale.Scale) or 1;
-				Compkiller:_Animation(Watermark,TweenInfo.new(0.4),{
-					Size = UDim2.new(0, (UIListLayout.AbsoluteContentSize.X / CurrentScale) + 8, 0, 23)
-				});
+				task.defer(function()
+					local CurrentScale = (WindowArgs.MainUIScale and WindowArgs.MainUIScale.Scale) or 1;
+					Compkiller:_Animation(Watermark,TweenInfo.new(0.4),{
+						Size = UDim2.new(0, (UIListLayout.AbsoluteContentSize.X / CurrentScale) + 8, 0, 23)
+					});
+				end)
 			end)
 
 			local Args = {};
@@ -10069,7 +10073,9 @@ function Compkiller.new(Config : Window)
 		end
 
 		-- Instant response for size/position changes
-		TabFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(UpdateSelectionUI)
+		TabFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+			task.defer(UpdateSelectionUI)
+		end)
 
 		-- Slow fallback loop for tab selection changes (no signal available)
 		task.spawn(function()
